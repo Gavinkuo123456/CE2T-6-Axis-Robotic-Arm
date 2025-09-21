@@ -1,6 +1,6 @@
 # Cost-Effective 6 DOF robotic arm
 
-A cost-effective 6-degree-of-freedom robotic arm offering both precision and a strong load capacity for its price range.
+A budget friendly 6-degree-of-freedom homemade robotic arm offering both precision and a strong load capacity for its price range.
 
 ![Robot Arm CAD](/Images/CADdrawing.jpg)
 ![Robot Arm real](/Images/realthing.jpg)
@@ -8,7 +8,7 @@ A cost-effective 6-degree-of-freedom robotic arm offering both precision and a s
 ## 🤖 Overview
 
 This project features a fully functional 6-DOF robotic arm that combines:
-- **3D printed mechanical components** for cost-effective construction
+- **3D printed mechanical components** for easy production and construction
 - **Stepper motor actuation** for precise positioning
 - **Powerfull motor controller** for driving high-torque motors with precise control
 - **Arduino-based control system** for accessibility and expandability
@@ -47,11 +47,12 @@ This project features a fully functional 6-DOF robotic arm that combines:
    - **Joint 2** NEMA17x60 with 1:50 planetary gearbox
    - **Joint 3** NEMA17x48 with 1:27 planetary gearbox
    - **Joint 4** NEMA11x34 with 1:20 planetary gearbox
-   - **Joint 5** NEMA 14x40
+   - **Joint 5** NEMA14x40
    - **Joint 6** NEMA11x34
 - **Power Supply** 24V 50W
-- **Jumper Wires** and **Breadboard/PCB**
 - **Limit Switches** optical endstop x 6
+- **Jumper Wires** and **Breadboard/PCB**
+
 
 ### Frame
 - **3D Printed Parts** (see `/3D-model` folder)
@@ -72,7 +73,7 @@ This project features a fully functional 6-DOF robotic arm that combines:
 
 ## 🔧 Assembly Instructions
 
-Detailed assembly instructions with images available in `/Docs/assembly.md`
+Detailed assembly instructions with images available in `/Docs/assembly.pdf`
 
 ## 💻 Software Setup
 
@@ -81,6 +82,7 @@ Detailed assembly instructions with images available in `/Docs/assembly.md`
 - Required Libraries:
   - `AccelStepper`
   - `MultiStepper`
+  - `math`
   - `Servo` (if using servo gripper)
 
 ## 🎮 Usage
@@ -95,7 +97,7 @@ The robot arm can be controlled through:
 // Move to joint positions (degrees)
 jm 45 30 -20 0 45 90
 
-// Move to Cartesian position (mm,rad)
+// Move to Cartesian position (first three in mm,last three in rad)
 IK 200 150 100 0 90 0
 
 // Home all joints
