@@ -1,6 +1,7 @@
 #include <Wire.h>
 #include <Servo.h>
 #include <AccelStepper.h>
+#include <MultiStepper.h>
 #include <math.h>
 
 // Define stepper pins
@@ -39,6 +40,8 @@ float elocation = 0;
 float flocation = 0;
 float clawlocation = 0;
 
+long positions[6];
+
 const float agear = 1;
 const float bgear = 50;
 const float cgear = 27;
@@ -50,8 +53,8 @@ const float radtoang = 57.295;
 
 
 // Steps per revolution for the motor
-const float speed = 900;
-const float maxspeed = 800;
+const float speed = 50;
+const float maxspeed = 75;
 
 const float accel = 500;
 const float stepsPerRevolution = 1600;
@@ -64,6 +67,7 @@ AccelStepper stepperC(AccelStepper::DRIVER, CSTEP_PIN, CDIR_PIN);
 AccelStepper stepperD(AccelStepper::DRIVER, DSTEP_PIN, DDIR_PIN);
 AccelStepper stepperE(AccelStepper::DRIVER, ESTEP_PIN, EDIR_PIN);
 AccelStepper stepperF(AccelStepper::DRIVER, FSTEP_PIN, FDIR_PIN);
+MultiStepper robot2T;
 Servo claw;
 
 static const int DOF = 6;
@@ -437,69 +441,40 @@ static void motormove(const float *v) {
   if (alocation <= 90 && alocation >= -90) {
     Serial.print("A motor move = ");
     Serial.println(alocation);
-    stepperA.moveTo(alocation * agear * steppower);
+    positions[0] = alocation* agear * steppower;
+    //stepperA.moveTo(alocation * agear * steppower);
   }
   if (blocation <= 90 && blocation >= -90) {
     Serial.print("B motor move = ");
     Serial.println(blocation);
-    stepperB.moveTo(blocation * bgear * steppower);
+    positions[1] = blocation* bgear * steppower;
+    //stepperB.moveTo(blocation * bgear * steppower);
   }
   if (clocation <= 160 && clocation >= -160) {
     Serial.print("C motor move = ");
     Serial.println(clocation);
-    stepperC.moveTo(-1 * (clocation - 5) * cgear * steppower);
+    positions[2] = -1 * (clocation - 5) * cgear * steppower;
+    //stepperC.moveTo(-1 * (clocation - 5) * cgear * steppower);
   }
   if (dlocation <= 170 && dlocation >= -170) {
     Serial.print("D motor move = ");
     Serial.println(dlocation);
-    stepperD.moveTo(-1 * (dlocation - 3) * dgear * steppower);
+    positions[3] = -1 * (dlocation - 3) * dgear * steppower;
+    //stepperD.moveTo(-1 * (dlocation - 3) * dgear * steppower);
   }
   if (elocation <= 90 && elocation >= -90) {
     Serial.print("E motor move = ");
     Serial.println(elocation);
-    stepperE.moveTo(elocation * egear * steppower);
+    positions[4] = elocation * egear * steppower;
+    //stepperE.moveTo(elocation * egear * steppower);
   }
   if (flocation <= 180 && flocation >= -180) {
     Serial.print("F motor move = ");
     Serial.println(flocation);
-    stepperF.moveTo(-1 * flocation * fgear * steppower);
+    positions[5] = -1 * flocation * fgear * steppower;
+    //stepperF.moveTo(-1 * flocation * fgear * steppower);
   }
-  float distogo[6];
-  distogo[0] = abs(stepperA.distanceToGo() / agear / steppower);
-  distogo[1] = abs(stepperB.distanceToGo() / bgear / steppower);
-  distogo[2] = abs(stepperC.distanceToGo() / cgear / steppower);
-  distogo[3] = abs(stepperD.distanceToGo() / dgear / steppower);
-  distogo[4] = abs(stepperE.distanceToGo() / egear / steppower);
-  distogo[5] = abs(stepperF.distanceToGo() / fgear / steppower);
-  float maxdistogo = distogo[0];
-  for (int i = 1; i < 6; i++) {
-    if (distogo[i] >= maxdistogo) {
-      maxdistogo = distogo[i];
-    }
-  }
-  stepperA.setMaxSpeed(maxspeed * agear * distogo[0] / maxdistogo);
-  stepperA.setAcceleration(accel * agear * distogo[0] / maxdistogo);
-  Serial.println(maxspeed * agear * distogo[0] / maxdistogo);
-
-  stepperB.setMaxSpeed(maxspeed * bgear * distogo[1] / maxdistogo);
-  stepperB.setAcceleration(accel * bgear * distogo[1] / maxdistogo);
-  Serial.println(maxspeed * bgear * distogo[1] / maxdistogo);
-
-  stepperC.setMaxSpeed(maxspeed * cgear * distogo[2] / maxdistogo);
-  stepperC.setAcceleration(accel * cgear * distogo[2] / maxdistogo);
-  Serial.println(maxspeed * cgear * distogo[2] / maxdistogo);
-
-  stepperD.setMaxSpeed(maxspeed * dgear * distogo[3] / maxdistogo);
-  stepperD.setAcceleration(accel * dgear * distogo[3] / maxdistogo);
-  Serial.println(maxspeed * dgear * distogo[3] / maxdistogo);
-
-  stepperE.setMaxSpeed(maxspeed * egear * distogo[4] / maxdistogo);
-  stepperE.setAcceleration(accel * egear * distogo[4] / maxdistogo);
-  Serial.println(maxspeed * egear * distogo[4] / maxdistogo);
-
-  stepperF.setMaxSpeed(maxspeed * fgear * distogo[5] / maxdistogo);
-  stepperF.setAcceleration(accel * fgear * distogo[5] / maxdistogo);
-  Serial.println(maxspeed * fgear * distogo[5] / maxdistogo);
+  robot2T.moveTo(positions);
 }
 
 
@@ -569,6 +544,14 @@ void setup() {
   stepperF.setPinsInverted(true, false, false);
   claw.write(96);
 
+  robot2T.addStepper(stepperA);
+  robot2T.addStepper(stepperB);
+  robot2T.addStepper(stepperC);
+  robot2T.addStepper(stepperD);
+  robot2T.addStepper(stepperE);
+  robot2T.addStepper(stepperF);
+
+
   Serial.println(F("6DOF FK/IK ready. Units: rad & mm."));
   Serial.println(F("Commands:"));
   Serial.println(F("  FK q1 q2 q3 q4 q5 q6"));
@@ -580,12 +563,7 @@ void loop() {
   if (digitalRead(emergbtn) == HIGH) {
     motorzero();
   }
-  stepperA.run();
-  stepperB.run();
-  stepperC.run();
-  stepperD.run();
-  stepperE.run();
-  stepperF.run();
+  robot2T.run();
   String line;
   if (!readLine(line)) return;  // no blocking
   String tok[20];
@@ -616,7 +594,6 @@ void loop() {
     Serial.println(F("FK q1 q2 q3 q4 q5 q6"));
     Serial.println(F("IK X Y Z RX RY RZ [q1 q2 q3 q4 q5 q6]"));
   } else if (tok[0] == "jm") {
-    resetspeed();
     alocation = tok[1].toFloat();
     blocation = tok[2].toFloat();
     clocation = tok[3].toFloat();
@@ -626,33 +603,40 @@ void loop() {
     if (alocation <= 90 && alocation >= -90) {
       Serial.print("A motor move = ");
       Serial.println(alocation);
-      stepperA.moveTo(alocation * steppower);
+      positions[0] = alocation * agear * steppower;
+      //stepperA.moveTo(alocation * agear * steppower);
     }
     if (blocation <= 90 && blocation >= -90) {
       Serial.print("B motor move = ");
       Serial.println(blocation);
-      stepperB.moveTo(blocation * bgear * steppower);
+      positions[1] = blocation * bgear * steppower;
+      //stepperB.moveTo(blocation * bgear * steppower);
     }
     if (clocation <= 160 && clocation >= -160) {
       Serial.print("C motor move = ");
       Serial.println(clocation);
-      stepperC.moveTo(-1 * clocation * cgear * steppower);
+      positions[2] = -1 * (clocation - 5) * cgear * steppower;
+      //stepperC.moveTo(-1 * (clocation - 5) * cgear * steppower);
     }
     if (dlocation <= 170 && dlocation >= -170) {
       Serial.print("D motor move = ");
       Serial.println(dlocation);
-      stepperD.moveTo(-1 * dlocation * dgear * steppower);
+      positions[3] = -1 * (dlocation - 3) * dgear * steppower;
+      //stepperD.moveTo(-1 * (dlocation - 3) * dgear * steppower);
     }
     if (elocation <= 90 && elocation >= -90) {
       Serial.print("E motor move = ");
       Serial.println(elocation);
-      stepperE.moveTo(elocation * egear * steppower);
+      positions[4] = elocation * egear * steppower;
+      //stepperE.moveTo(elocation * egear * steppower);
     }
     if (flocation <= 180 && flocation >= -180) {
       Serial.print("F motor move = ");
       Serial.println(flocation);
-      stepperF.moveTo(-1 * flocation * fgear * steppower);
+      positions[5] = -1 * flocation * fgear * steppower;
+      //stepperF.moveTo(-1 * flocation * fgear * steppower);
     }
+    robot2T.moveTo(positions);
   } else if (tok[0] == "zro") {
     motorzero();
   } else if (tok[0] == "clm") {
@@ -667,20 +651,6 @@ void loop() {
   }
 }
 
-void resetspeed() {
-  stepperA.setMaxSpeed(maxspeed * agear);
-  stepperA.setAcceleration(accel * agear);
-  stepperB.setMaxSpeed(maxspeed * bgear);
-  stepperB.setAcceleration(accel * bgear);
-  stepperC.setMaxSpeed(maxspeed * cgear);
-  stepperC.setAcceleration(accel * cgear);
-  stepperD.setMaxSpeed(maxspeed * dgear);
-  stepperD.setAcceleration(accel * dgear);
-  stepperE.setMaxSpeed(maxspeed * egear);
-  stepperE.setAcceleration(accel * egear);
-  stepperF.setMaxSpeed(maxspeed * fgear);
-  stepperF.setAcceleration(accel * fgear);
-}
 void receiveEvent(int numBytes) {  //I2C received, copy from void loop
   String receivedstr = "";
   while (Wire.available()) {
@@ -721,7 +691,6 @@ void I2cmotormove(String input) {
     Serial.println(F("FK q1 q2 q3 q4 q5 q6"));
     Serial.println(F("IK X Y Z RX RY RZ [q1 q2 q3 q4 q5 q6]"));
   } else if (tok[0] == "jm") {
-    resetspeed();
     alocation = tok[1].toFloat();
     blocation = tok[2].toFloat();
     clocation = tok[3].toFloat();
