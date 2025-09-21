@@ -28,8 +28,6 @@
 
 const int SLAVE_ADDRESS = 1;
 char incomingByte = 0;
-char ji2cindex;
-bool i2cIN = 0;
 
 String i2cC = "";
 
@@ -76,7 +74,7 @@ static const float theta_off_[DOF] = { 0.00f, -1.57f, 1.57f, 0.00f, 0.00f, 0.00f
 
 // IK settings
 static const int MAX_ITERS = 120;     // iterations cap
-static const float DAMPING = 0.02f;   // lambda for DLS (radians & mm units)
+static const float DAMPING = 0.02f;   // lambda for DLS (radians & mm units)void
 static const float POS_TOL = 0.5f;    // mm
 static const float ROT_TOL = 0.005f;  // rad (~0.29 deg)
 // ---------------------------------------------------------------------------------
@@ -454,7 +452,7 @@ static void motormove(const float *v) {
   if (dlocation <= 170 && dlocation >= -170) {
     Serial.print("D motor move = ");
     Serial.println(dlocation);
-    stepperD.moveTo(-1 * (dlocation-3) * dgear * steppower);
+    stepperD.moveTo(-1 * (dlocation - 3) * dgear * steppower);
   }
   if (elocation <= 90 && elocation >= -90) {
     Serial.print("E motor move = ");
@@ -667,9 +665,6 @@ void loop() {
   } else {
     Serial.println(F("#ERR: bad command. Use HELP"));
   }
-  if (i2cIN == true) {
-    I2Crunmotor();
-  }
 }
 
 void resetspeed() {
@@ -686,7 +681,7 @@ void resetspeed() {
   stepperF.setMaxSpeed(maxspeed * fgear);
   stepperF.setAcceleration(accel * fgear);
 }
-void receiveEvent() {//I2C received, copy from void loop
+void receiveEvent(int numBytes) {  //I2C received, copy from void loop
   String receivedstr = "";
   while (Wire.available()) {
     char inByte;
@@ -694,8 +689,12 @@ void receiveEvent() {//I2C received, copy from void loop
     receivedstr += inByte;
   }
   Serial.println(receivedstr);
+  I2cmotormove(receivedstr);
+}
+void I2cmotormove(String input) {
+
   String tok[20];
-  int n = splitTokens(receivedstr, tok, 20);
+  int n = splitTokens(input, tok, 20);
   if (n <= 0) return;
 
   if (tok[0] == "FK" && n == 1 + DOF) {
@@ -771,50 +770,6 @@ void receiveEvent() {//I2C received, copy from void loop
   } else {
     Serial.println(F("#ERR: bad command. Use HELP"));
   }
-}
-
-void I2Crunmotor() {
-  Serial.print("joint ");
-  Serial.print(ji2cindex);
-  Serial.print(",run:");
-  Serial.print(i2cC);
-  int angle = i2cC.toInt();
-  switch (ji2cindex) {
-    case 'a':
-      if (angle <= 180 && angle >= 0) {
-        stepperA.moveTo(angle * steppower);
-      }
-      break;
-    case 'b':
-      if (angle <= 180 && angle >= 0) {
-        stepperB.moveTo(angle * bgear * steppower);
-      }
-      break;
-    case 'c':
-      if (angle <= 180 && angle >= 0) {
-        stepperC.moveTo(angle * cgear * steppower);
-      }
-      break;
-    case 'd':
-      if (angle <= 180 && angle >= 0) {
-      }
-      break;
-    case 'e':
-      if (angle <= 180 && angle >= 0) {
-      }
-      break;
-    case 'f':
-      if (angle <= 180 && angle >= 0) {
-      }
-      break;
-    case 'h':
-      if (angle <= 180 && angle >= 0) {
-        claw.write(angle);
-      }
-      break;
-  }
-  i2cIN = false;
-  i2cC = "";
 }
 
 void motorzero() {
