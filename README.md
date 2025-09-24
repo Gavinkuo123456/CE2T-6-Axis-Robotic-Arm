@@ -33,8 +33,8 @@ This project features a fully functional 6-DOF robotic arm that combines:
 | Control System | Arduino-based |
 | Control Method | Open-loop |
 | Construction | 3D Printed frame + Standard size Components |
-| Workspace | ? |
-| Payload Capacity | ? |
+| Workspace | 500mm radius |
+| Payload Capacity | ~300g |
 | Repeatability | ✅ |
 
 ## 🛠️ Hardware Requirements
