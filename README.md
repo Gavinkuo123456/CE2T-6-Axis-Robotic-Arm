@@ -69,7 +69,7 @@ This project features a fully functional 6-DOF robotic arm that combines:
 - Allen keys/Hex keys
 - Wire strippers
 - Multimeter
-- Laser cutter(optional, You can use drill and ahnd saw)
+- Laser cutter(optional, You can use drill and hand saw)
 
 ## 🔧 Assembly Instructions
 
