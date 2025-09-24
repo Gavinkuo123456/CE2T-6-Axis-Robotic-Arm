@@ -32,7 +32,7 @@ This project features a fully functional 6-DOF robotic arm that combines:
 | Motor Type | Stepper Motors |
 | Control System | Arduino-based |
 | Control Method | Open-loop |
-| Construction | 3D Printed frame + Standard size Components |
+| Construction | 3D Printed frame + Standard Components |
 | Workspace | 500mm radius |
 | Payload Capacity | ~300g |
 | Repeatability | ✅ |
@@ -51,7 +51,7 @@ This project features a fully functional 6-DOF robotic arm that combines:
    - **Joint 6** NEMA11x34
 - **Power Supply** 24V 50W
 - **Limit Switches** optical endstop x 6
-- **Jumper Wires** and **Breadboard/PCB**
+- **Pin Header** and **General-Purpose Printed Circuit Board**(for the only custom extension board)
 
 
 ### Frame
