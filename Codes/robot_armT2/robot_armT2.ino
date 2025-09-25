@@ -479,7 +479,7 @@ static void motormove(const float *v) {
 
 
 void setup() {
-  Serial.begin(57600);
+  Serial.begin(115200);
   Serial.println("IOT robot arm ready");
   pinMode(ENABLE, OUTPUT);
   pinMode(AENABLE, OUTPUT);
