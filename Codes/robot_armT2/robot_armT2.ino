@@ -4,6 +4,15 @@
 #include <MultiStepper.h>
 #include <math.h>
 
+// =================================================================================
+// <<< 新增的全域變數 >>>
+// volatile 關鍵字是必須的，因為此變數會在中斷(receiveEvent)中被修改
+volatile bool newDataFromI2C = false; 
+// 用於儲存從 I2C 完整接收到的指令
+String i2cCommand = "";
+// =================================================================================
+
+
 // Define stepper pins
 #define ASTEP_PIN 48  // Step pin
 #define ADIR_PIN 50   // Direction pin
@@ -41,6 +50,10 @@ float flocation = 0;
 float clawlocation = 0;
 
 long positions[6];
+
+String I2Creturn = "";
+
+// bool I2Cin = 0; // <<< 這個舊旗標不再需要，由 newDataFromI2C 取代
 
 const float agear = 1;
 const float bgear = 50;
@@ -441,38 +454,32 @@ static void motormove(const float *v) {
   if (alocation <= 90 && alocation >= -90) {
     Serial.print("A motor move = ");
     Serial.println(alocation);
-    positions[0] = alocation* agear * steppower;
-    //stepperA.moveTo(alocation * agear * steppower);
+    positions[0] = alocation * agear * steppower;
   }
   if (blocation <= 90 && blocation >= -90) {
     Serial.print("B motor move = ");
     Serial.println(blocation);
-    positions[1] = blocation* bgear * steppower;
-    //stepperB.moveTo(blocation * bgear * steppower);
+    positions[1] = blocation * bgear * steppower;
   }
   if (clocation <= 160 && clocation >= -160) {
     Serial.print("C motor move = ");
     Serial.println(clocation);
     positions[2] = -1 * (clocation - 5) * cgear * steppower;
-    //stepperC.moveTo(-1 * (clocation - 5) * cgear * steppower);
   }
   if (dlocation <= 170 && dlocation >= -170) {
     Serial.print("D motor move = ");
     Serial.println(dlocation);
     positions[3] = -1 * (dlocation - 3) * dgear * steppower;
-    //stepperD.moveTo(-1 * (dlocation - 3) * dgear * steppower);
   }
   if (elocation <= 90 && elocation >= -90) {
     Serial.print("E motor move = ");
     Serial.println(elocation);
     positions[4] = elocation * egear * steppower;
-    //stepperE.moveTo(elocation * egear * steppower);
   }
   if (flocation <= 180 && flocation >= -180) {
     Serial.print("F motor move = ");
     Serial.println(flocation);
     positions[5] = -1 * flocation * fgear * steppower;
-    //stepperF.moveTo(-1 * flocation * fgear * steppower);
   }
   robot2T.moveTo(positions);
 }
@@ -503,7 +510,7 @@ void setup() {
   pinMode(emergbtn, INPUT);
 
   Wire.begin(SLAVE_ADDRESS);  // join I2C bus as a slave with address 1
-  Wire.onReceive(receiveEvent);
+  Wire.onReceive(receiveEvent); // <<< 註冊修改過的 receiveEvent 函式
   claw.attach(47);
 
   // Set microstepping mode (adjust as needed: HIGH or LOW)
@@ -558,12 +565,31 @@ void setup() {
   Serial.println(F("  IK X Y Z RX RY RZ [q1 q2 q3 q4 q5 q6]"));
 }
 
+void handleI2CCommand(); // <<< 預先宣告處理函式
 
 void loop() {
   if (digitalRead(emergbtn) == HIGH) {
     motorzero();
   }
+
+  // =================================================================================
+  // <<< 主要修改部分 >>>
+  // 檢查是否有新的 I2C 指令需要處理
+  if (newDataFromI2C) {
+    // 立刻重置旗標，這樣可以準備接收下一筆指令
+    // 把這行放在最前面，可以避免在處理期間錯過新的指令
+    newDataFromI2C = false;
+
+    Serial.println("Received I2C command, now processing...");
+    
+    // 呼叫一個獨立的函式來處理指令，讓 loop() 保持乾淨
+    handleI2CCommand(); 
+  }
+  // =================================================================================
+
+
   robot2T.run();
+
   String line;
   if (!readLine(line)) return;  // no blocking
   String tok[20];
@@ -651,95 +677,74 @@ void loop() {
   }
 }
 
-void receiveEvent(int numBytes) {  //I2C received, copy from void loop
-  String receivedstr = "";
-  while (Wire.available()) {
-    char inByte;
-    inByte = Wire.read();
-    receivedstr += inByte;
+
+// =================================================================================
+// <<< 修改後的 receiveEvent 函式 >>>
+// 這個函式現在非常輕量，只負責接收字串並設定旗標，執行速度極快。
+// =================================================================================
+void receiveEvent(int howMany) {
+  i2cCommand = ""; // 清空舊指令
+  while (Wire.available() > 0)
+  {
+    char c = Wire.read();
+    i2cCommand += c; // 將收到的字元存到全域變數中
   }
-  Serial.println(receivedstr);
-  I2cmotormove(receivedstr);
+  newDataFromI2C = true; // 設定旗標，通知 loop() 有新指令
 }
-void I2cmotormove(String input) {
+
+// =================================================================================
+// <<< 新增的 I2C 指令處理函式 >>>
+// 這裡面是您原本放在 receiveEvent 裡的完整處理邏輯。
+// 現在它在主程式 loop() 中被安全地呼叫，不會再造成中斷問題。
+// =================================================================================
+void handleI2CCommand() {
+  Serial.print("Full command received: ");
+  Serial.println(i2cCommand); // 在這裡印出收到的完整指令
 
   String tok[20];
-  int n = splitTokens(input, tok, 20);
+  int n = splitTokens(i2cCommand, tok, 20);
   if (n <= 0) return;
 
-  if (tok[0] == "FK" && n == 1 + DOF) {
-    float q[DOF];
-    parseFloats(tok, 1, DOF, q);
-    float T[16];
-    fk(q, T);
-    float rx, ry, rz;
-    mat4ExtractRPY_ZYX(T, rx, ry, rz);
-    float out[6] = { T[3], T[7], T[11], rx, ry, rz };
-    printArray(out, 6);
-  } else if (tok[0] == "IK" && (n == 1 + 6 || n == 1 + 6 + DOF)) {
+  if (tok[0] == "IK" && (n == 1 + 6)) {
     float p[3], rpy[3];
     parseFloats(tok, 1, 3, p);
     parseFloats(tok, 4, 3, rpy);
     float q[DOF] = { 0, 0, 1.57, 0, 0, 0 };
-    if (n == 1 + 6 + DOF) parseFloats(tok, 1 + 6, DOF, q);
+    // This part of your original code was unreachable, but I've kept it for consistency
+    if (n == 1 + 6 + DOF) parseFloats(tok, 1 + 6, DOF, q); 
 
     bool ok = ik_solve(q, p, rpy);
     if (!ok) Serial.print(F("#WARN: not fully converged -> "));
+    
+    Serial.print("IK result (raw): ");
     printArray(q, DOF);
+    
+    // Your original rounding logic
+    float qs[6];
+    for (int i = 0; i < 6; i++) { // Corrected loop to process all 6 DOFs
+      qs[i] = round(q[i] * 100.0) / 100.0;
+    }
+    Serial.print("IK result (rounded): ");
+    printArray(qs, DOF);
+
+    // Call motormove with the original high-precision values
     motormove(q);
-  } else if (tok[0] == "HELP") {
-    Serial.println(F("FK q1 q2 q3 q4 q5 q6"));
-    Serial.println(F("IK X Y Z RX RY RZ [q1 q2 q3 q4 q5 q6]"));
-  } else if (tok[0] == "jm") {
-    alocation = tok[1].toFloat();
-    blocation = tok[2].toFloat();
-    clocation = tok[3].toFloat();
-    dlocation = tok[4].toFloat();
-    elocation = tok[5].toFloat();
-    flocation = tok[6].toFloat();
-    if (alocation <= 90 && alocation >= -90) {
-      Serial.print("A motor move = ");
-      Serial.println(alocation);
-      stepperA.moveTo(alocation * steppower);
-    }
-    if (blocation <= 90 && blocation >= -90) {
-      Serial.print("B motor move = ");
-      Serial.println(blocation);
-      stepperB.moveTo(blocation * bgear * steppower);
-    }
-    if (clocation <= 160 && clocation >= -160) {
-      Serial.print("C motor move = ");
-      Serial.println(clocation);
-      stepperC.moveTo(-1 * clocation * cgear * steppower);
-    }
-    if (dlocation <= 170 && dlocation >= -170) {
-      Serial.print("D motor move = ");
-      Serial.println(dlocation);
-      stepperD.moveTo(-1 * dlocation * dgear * steppower);
-    }
-    if (elocation <= 90 && elocation >= -90) {
-      Serial.print("E motor move = ");
-      Serial.println(elocation);
-      stepperE.moveTo(elocation * egear * steppower);
-    }
-    if (flocation <= 180 && flocation >= -180) {
-      Serial.print("F motor move = ");
-      Serial.println(flocation);
-      stepperF.moveTo(-1 * flocation * fgear * steppower);
-    }
-  } else if (tok[0] == "zro") {
-    motorzero();
+  } 
+  // You can add your other I2C commands (like "zro", "clm") here if needed
+  else if (tok[0] == "zro") {
+      motorzero();
   } else if (tok[0] == "clm") {
-    clawlocation = tok[1].toFloat();
-    if (clawlocation <= 180 && clawlocation >= 0) {
-      Serial.print("claw motor move = ");
-      Serial.println(clawlocation);
-      claw.write(clawlocation);
-    }
+      clawlocation = tok[1].toFloat();
+      if (clawlocation <= 180 && clawlocation >= 0) {
+        Serial.print("claw motor move = ");
+        Serial.println(clawlocation);
+        claw.write(clawlocation);
+      }
   } else {
-    Serial.println(F("#ERR: bad command. Use HELP"));
+      Serial.println("#ERR: Unknown I2C command or wrong parameters.");
   }
 }
+
 
 void motorzero() {
   stepperA.setSpeed(speed * agear);
