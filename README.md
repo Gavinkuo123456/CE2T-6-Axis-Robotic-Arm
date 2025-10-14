@@ -125,7 +125,7 @@ The robot arm uses standard Denavit-Hartenberg parameters for kinematic calculat
 - [ ] Closed-loop control with encoders
 - [ ] Vision system integration
 - [ ] ROS compatibility
-- [ ] Mobile app control
+- [ ] Mobile app(Brower) control
 - [ ] Advanced path planning
 - [ ] Machine learning integration
 - [ ] Multi-arm coordination
