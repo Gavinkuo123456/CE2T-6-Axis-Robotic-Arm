@@ -12,7 +12,7 @@ This project features a fully functional 6-DOF robotic arm that combines:
 - **Stepper motor actuation** for precise positioning
 - **Powerfull motor controller** for driving high-torque motors with precise control
 - **Arduino-based control system** for accessibility and expandability
-- **Open-loop control** for simplicity, reliability and easy maintenance
+- **Open-loop control** for simplicity, budget-friendly and easy maintenance
 
 
 ## ✨ Features
@@ -34,24 +34,24 @@ This project features a fully functional 6-DOF robotic arm that combines:
 | Control Method | Open-loop |
 | Construction | 3D Printed frame + Standard Components |
 | Workspace | 500mm radius |
-| Payload Capacity | ~300g |
+| Payload Capacity | ~500g |
 | Repeatability | ✅ |
 
 ## 🛠️ Hardware Requirements
 
 ### Electronics
-- **Arduino Board** Arduino mega 2560
-- **Stepper Motor Drivers** TMC2209 × 3 , LM542 x 3
+- **Arduino Board** Arduino Due
+- **Stepper Motor Drivers** TMC2209 × 3 , DM542 x 3
 - **Stepper Motors**
-   - **Joint 1** NEMA23x56
-   - **Joint 2** NEMA17x60 with 1:50 planetary gearbox
-   - **Joint 3** NEMA17x48 with 1:27 planetary gearbox
-   - **Joint 4** NEMA11x34 with 1:20 planetary gearbox
-   - **Joint 5** NEMA14x40
-   - **Joint 6** NEMA11x34
-- **Power Supply** 24V 50W
+   - **Joint 1** NEMA23L56
+   - **Joint 2** NEMA17L60 with 1:50 planetary gearbox
+   - **Joint 3** NEMA17L48 with 1:27 planetary gearbox
+   - **Joint 4** NEMA11L33 with 1:20 planetary gearbox
+   - **Joint 5** NEMA14L20
+   - **Joint 6** NEMA11L33
+- **Power Supply** 24V 100W
 - **Limit Switches** optical endstop x 6
-- **Pin Header** and **General-Purpose Printed Circuit Board**(for the only custom extension board)
+- **Pin Header** and **General-Purpose Printed Circuit Board**(for the only custom expansion board)
 
 
 ### Frame
@@ -73,7 +73,7 @@ This project features a fully functional 6-DOF robotic arm that combines:
 
 ## 🔧 Assembly Instructions
 
-Detailed assembly instructions with images available in `/Docs/assembly.pdf`
+Detailed assembly instructions with images available in `/Docs/Assembly instructions.docx`
 
 ## 💻 Software Setup
 
